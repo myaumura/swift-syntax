@@ -11,7 +11,7 @@
 //===----------------------------------------------------------------------===//
 
 import SwiftParser
-import SwiftSyntax
+@_spi(Testing) import SwiftSyntax
 @_spi(Testing) import SwiftSyntaxMacroExpansion
 import XCTest
 import _SwiftSyntaxTestSupport
@@ -24,8 +24,11 @@ private func assertSyntaxRemovingTestAttributes(
 ) {
   let attributeToRemove = AttributeSyntax(stringLiteral: "@Test")
 
-  let reducedSource = AttributeRemover(
-    removingWhere: { $0.trimmedDescription == attributeToRemove.trimmedDescription }
+  let reducedSource = NodeRemover(
+    removingWhere: {
+      guard let attribute = $0.as(AttributeSyntax.self) else { return false }
+      return attribute.trimmedDescription == attributeToRemove.trimmedDescription
+    }
   )
   .rewrite(
     Parser.parse(source: originalSource)
@@ -44,7 +47,7 @@ private func assertSyntaxRemovingTestAttributes(
   )
 }
 
-final class AttributeRemoverTests: XCTestCase {
+final class NodeRemoverTests: XCTestCase {
   func testEmptyOnSameLineAsVariable() {
     assertSyntaxRemovingTestAttributes(
       "@Test var x: Int",
@@ -59,7 +62,7 @@ final class AttributeRemoverTests: XCTestCase {
     )
   }
 
-  // FIXME: `AttributeRemover` should not leave a leading newline.
+  // FIXME: `NodeRemover` should not leave a leading newline.
   func testEmptyOnOwnLineBeforeVariable() {
     assertSyntaxRemovingTestAttributes(
       """
@@ -70,7 +73,7 @@ final class AttributeRemoverTests: XCTestCase {
     )
   }
 
-  // FIXME: `AttributeRemover` should not leave a leading newline.
+  // FIXME: `NodeRemover` should not leave a leading newline.
   func testEmptyTwiceOnOwnLineBeforeVariable() {
     assertSyntaxRemovingTestAttributes(
       """
@@ -166,7 +169,7 @@ final class AttributeRemoverTests: XCTestCase {
     )
   }
 
-  // FIXME: `AttributeRemover` should not leave a leading newline.
+  // FIXME: `NodeRemover` should not leave a leading newline.
   func testEmptyNewlineBlockComment() {
     assertSyntaxRemovingTestAttributes(
       """
@@ -339,7 +342,7 @@ final class AttributeRemoverTests: XCTestCase {
     )
   }
 
-  // FIXME: `AttributeRemover` should not leave a leading newline.
+  // FIXME: `NodeRemover` should not leave a leading newline.
   func testEmptyAndAttributeOnOwnLinesBeforeVariable() {
     assertSyntaxRemovingTestAttributes(
       """
@@ -367,7 +370,7 @@ final class AttributeRemoverTests: XCTestCase {
     )
   }
 
-  // FIXME: `AttributeRemover` should not leave a leading newline.
+  // FIXME: `NodeRemover` should not leave a leading newline.
   func testEmptyOnOwnLineThenEmptyBeforeVariable() {
     assertSyntaxRemovingTestAttributes(
       """

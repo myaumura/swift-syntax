@@ -11,9 +11,9 @@
 //===----------------------------------------------------------------------===//
 
 #if compiler(>=6)
-public import SwiftSyntax
+@_spi(Testing) public import SwiftSyntax
 #else
-import SwiftSyntax
+@_spi(Testing) import SwiftSyntax
 #endif
 
 public struct ConvertStoredPropertyToComputed: SyntaxRefactoringProvider {
@@ -46,19 +46,18 @@ public struct ConvertStoredPropertyToComputed: SyntaxRefactoringProvider {
           item: .expr(initializer.value)
         )
       ])
-      body.trailingTrivia += .space
       body.leadingTrivia = initializer.equal.trailingTrivia + body.leadingTrivia
+      body.trailingTrivia += .space
       codeBlockSyntax = body
     }
 
     var modifiers = syntax.modifiers
-    var modifiersLeadingTrivia = Trivia()
 
-    if let lazyKeyword = modifiers.first(where: { $0.name.tokenKind == .keyword(.lazy) }),
-      let index = modifiers.index(of: lazyKeyword)
-    {
-      modifiers.remove(at: index)
-      modifiersLeadingTrivia = lazyKeyword.leadingTrivia
+    if let lazyKeyword = modifiers.first(where: { $0.name.tokenKind == .keyword(.lazy) }) {
+      modifiers = NodeRemover {
+        guard let keyword = $0.as(DeclModifierSyntax.self) else { return false }
+        return keyword.name.tokenKind == lazyKeyword.name.tokenKind
+      }.rewrite(syntax.modifiers).as(DeclModifierListSyntax.self)!
     }
 
     let newBinding =
@@ -71,15 +70,9 @@ public struct ConvertStoredPropertyToComputed: SyntaxRefactoringProvider {
         )
       )
 
-    var newBindingSpecifier =
+    let newBindingSpecifier =
       syntax.bindingSpecifier
       .with(\.tokenKind, .keyword(.var))
-
-    if modifiers.isEmpty {
-      newBindingSpecifier.leadingTrivia += modifiersLeadingTrivia
-    } else {
-      modifiers.leadingTrivia += modifiersLeadingTrivia
-    }
 
     return
       syntax

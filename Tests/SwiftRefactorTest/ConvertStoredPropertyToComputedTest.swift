@@ -206,6 +206,82 @@ final class ConvertStoredPropertyToComputedTest: XCTestCase {
 
     try assertRefactorConvert(baseline, expected: expected)
   }
+  
+  func testRefactoringStoredPropertyWithModifiersAndComment() throws {
+    let baseline: DeclSyntax = """
+      lazy /* some comment */ private var defaultColor: Color = .red
+      """
+
+    let expected: DeclSyntax = """
+      /* some comment */ private var defaultColor: Color { .red }
+      """
+
+    try assertRefactorConvert(baseline, expected: expected)
+  }
+
+  func testRefactoringStoredPropertyWithModifiersAndComment2() throws {
+    let baseline: DeclSyntax = """
+      private /* comment */ lazy var defaultColor: Color = .red
+      """
+
+    let expected: DeclSyntax = """
+      private /* comment */ var defaultColor: Color { .red }
+      """
+
+    try assertRefactorConvert(baseline, expected: expected)
+  }
+
+  func testRefactoringStructStoredPropertiyWithModifiers() throws {
+    let baseline: DeclSyntax = """
+      struct Foo {
+        lazy private var defaultColor: Color = .red
+      }
+      """
+
+    let expected: DeclSyntax = """
+      struct Foo {
+        private var defaultColor: Color { .red }
+      }
+      """
+    
+    try assertRefactorStructConvert(baseline, expected: expected)
+  }
+
+  func testRefactoringStructStoredPropertiyWithModifiers2() throws {
+    let baseline: DeclSyntax = """
+      struct Foo {
+        private
+        /* comment */ lazy var defaultColor: Color = .red
+      }
+      """
+
+    let expected: DeclSyntax = """
+      struct Foo {
+        private
+        /* comment */ var defaultColor: Color { .red }
+      }
+      """
+    
+    try assertRefactorStructConvert(baseline, expected: expected)
+  }
+  
+  func testRefactoringStructStoredPropertiyWithModifiers3() throws {
+    let baseline: DeclSyntax = """
+      struct Foo {
+        private /* comment */
+        /* another comment */ lazy var defaultColor: Color = .red
+      }
+      """
+
+    let expected: DeclSyntax = """
+      struct Foo {
+        private /* comment */
+        /* another comment */ var defaultColor: Color { .red }
+      }
+      """
+    
+    try assertRefactorStructConvert(baseline, expected: expected)
+  }
 }
 
 private func assertRefactorConvert(
@@ -222,4 +298,26 @@ private func assertRefactorConvert(
     file: file,
     line: line
   )
+}
+
+private func assertRefactorStructConvert(
+  _ callDecl: DeclSyntax,
+  expected: DeclSyntax,
+  file: StaticString = #filePath,
+  line: UInt = #line
+) throws {
+
+  let structCallDecl = try XCTUnwrap(callDecl.as(StructDeclSyntax.self))
+  let expectedDecl = try XCTUnwrap(expected.as(StructDeclSyntax.self))
+
+  let variable = try XCTUnwrap(structCallDecl.memberBlock.members.first?.decl.as(VariableDeclSyntax.self))
+  let refactored = try ConvertStoredPropertyToComputed.refactor(syntax: variable, in: ())
+
+  let members = MemberBlockItemListSyntax {
+    MemberBlockItemSyntax(decl: DeclSyntax(refactored))
+  }
+
+  let refactoredMemberBlock = expectedDecl.memberBlock.with(\.members, members)
+  let refactoredStruct = expectedDecl.with(\.memberBlock, refactoredMemberBlock)
+  assertStringsEqualWithDiff(refactoredStruct.description, expected.description)
 }
