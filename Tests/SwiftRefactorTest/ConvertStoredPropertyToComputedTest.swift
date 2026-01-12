@@ -317,7 +317,7 @@ private func assertRefactorStructConvert(
     MemberBlockItemSyntax(decl: DeclSyntax(refactored))
   }
 
-  let refactoredMemberBlock = expectedDecl.memberBlock.with(\.members, members)
-  let refactoredStruct = expectedDecl.with(\.memberBlock, refactoredMemberBlock)
+  let refactoredMemberBlock = structCallDecl.memberBlock.with(\.members, members)
+  let refactoredStruct = structCallDecl.with(\.memberBlock, refactoredMemberBlock)
   assertStringsEqualWithDiff(refactoredStruct.description, expected.description)
 }
