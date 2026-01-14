@@ -58,6 +58,7 @@ package class DeclModifierRemover: SyntaxRewriter {
   /// - Parameter node: The syntax node receiving the accumulated trivia.
   /// - Returns: The modified syntax node with the prepended trivia.
   private func prependAndClearAccumulatedTrivia<T: SyntaxProtocol>(to syntaxNode: T) -> T {
+    guard !triviaToAttachToNextToken.isEmpty else { return syntaxNode }
     defer { triviaToAttachToNextToken = Trivia() }
     return syntaxNode.with(\.leadingTrivia, triviaToAttachToNextToken + syntaxNode.leadingTrivia)
   }
