@@ -617,29 +617,6 @@ public class AttributeRemover: SyntaxRewriter {
   }
 }
 
-private extension Trivia {
-  func trimmingPrefix(
-    while predicate: (TriviaPiece) -> Bool
-  ) -> Trivia {
-    Trivia(pieces: self.drop(while: predicate))
-  }
-
-  func trimmingSuffix(
-    while predicate: (TriviaPiece) -> Bool
-  ) -> Trivia {
-    Trivia(
-      pieces: self[...]
-        .reversed()
-        .drop(while: predicate)
-        .reversed()
-    )
-  }
-
-  var startsWithNewline: Bool {
-    self.first?.isNewline ?? false
-  }
-}
-
 let diagnosticDomain: String = "SwiftSyntaxMacroExpansion"
 
 private enum MacroApplicationError: DiagnosticMessage, Error {
