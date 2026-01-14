@@ -35,6 +35,7 @@ package class DeclModifierRemover: SyntaxRewriter {
         continue
       }
 
+      //Removing modifier before comment leaves space before comment intact — doesn’t merge with following trivia.
       let trailingTrivia = modifier.trailingTrivia.trimmingPrefix(while: \.isSpaceOrTab)
       triviaToAttachToNextToken += modifier.leadingTrivia.merging(trailingTrivia)
     }

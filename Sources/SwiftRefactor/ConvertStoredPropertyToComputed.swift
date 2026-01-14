@@ -11,9 +11,9 @@
 //===----------------------------------------------------------------------===//
 
 #if compiler(>=6)
-@_spi(Testing) public import SwiftSyntax
+public import SwiftSyntax
 #else
-@_spi(Testing) import SwiftSyntax
+import SwiftSyntax
 #endif
 
 public struct ConvertStoredPropertyToComputed: SyntaxRefactoringProvider {
