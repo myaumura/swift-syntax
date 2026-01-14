@@ -24,7 +24,7 @@ private func assertSyntaxRemovingTestAttributes(
 ) {
   let attributeToRemove = AttributeSyntax(stringLiteral: "@Test")
 
-  let reducedSource = NodeRemover(
+  let reducedSource = AttributeRemover(
     removingWhere: {
       guard let attribute = $0.as(AttributeSyntax.self) else { return false }
       return attribute.trimmedDescription == attributeToRemove.trimmedDescription

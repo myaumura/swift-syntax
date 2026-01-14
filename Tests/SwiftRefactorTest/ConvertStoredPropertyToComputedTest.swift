@@ -206,7 +206,7 @@ final class ConvertStoredPropertyToComputedTest: XCTestCase {
 
     try assertRefactorConvert(baseline, expected: expected)
   }
-  
+
   func testRefactoringStoredPropertyWithModifiersAndComment() throws {
     let baseline: DeclSyntax = """
       lazy /* some comment */ private var defaultColor: Color = .red
@@ -243,7 +243,7 @@ final class ConvertStoredPropertyToComputedTest: XCTestCase {
         private var defaultColor: Color { .red }
       }
       """
-    
+
     try assertRefactorStructConvert(baseline, expected: expected)
   }
 
@@ -261,10 +261,10 @@ final class ConvertStoredPropertyToComputedTest: XCTestCase {
         /* comment */ var defaultColor: Color { .red }
       }
       """
-    
+
     try assertRefactorStructConvert(baseline, expected: expected)
   }
-  
+
   func testRefactoringStructStoredPropertiyWithModifiers3() throws {
     let baseline: DeclSyntax = """
       struct Foo {
@@ -279,7 +279,7 @@ final class ConvertStoredPropertyToComputedTest: XCTestCase {
         /* another comment */ var defaultColor: Color { .red }
       }
       """
-    
+
     try assertRefactorStructConvert(baseline, expected: expected)
   }
 }
