@@ -12,10 +12,10 @@
 
 import SwiftSyntax
 
-package class DeclModifierRemover: SyntaxRewriter {
-  let predicate: (DeclModifierSyntax) -> Bool
+final class DeclModifierRemover: SyntaxRewriter {
+  private let predicate: (DeclModifierSyntax) -> Bool
 
-  var triviaToAttachToNextToken: Trivia = Trivia()
+  private var triviaToAttachToNextToken: Trivia = Trivia()
 
   /// Initializes a modifier remover with a given predicate to determine which modifiers to remove.
   ///
@@ -35,7 +35,7 @@ package class DeclModifierRemover: SyntaxRewriter {
         continue
       }
 
-      //Removing modifier before comment leaves space before comment intact — doesn’t merge with following trivia.
+      // Removing modifier before comment leaves space before comment intact — doesn’t merge with following trivia.
       let trailingTrivia = modifier.trailingTrivia.trimmingPrefix(while: \.isSpaceOrTab)
       triviaToAttachToNextToken += modifier.leadingTrivia.merging(trailingTrivia)
     }
@@ -49,6 +49,10 @@ package class DeclModifierRemover: SyntaxRewriter {
     return DeclModifierListSyntax(filteredModifiers)
   }
 
+  public override func visit(_ token: TokenSyntax) -> TokenSyntax {
+    return prependAndClearAccumulatedTrivia(to: token)
+  }
+
   /// Prepends the accumulated trivia to the given node's leading trivia.
   ///
   /// To preserve correct formatting after attribute removal, this function reassigns
@@ -60,6 +64,6 @@ package class DeclModifierRemover: SyntaxRewriter {
   private func prependAndClearAccumulatedTrivia<T: SyntaxProtocol>(to syntaxNode: T) -> T {
     guard !triviaToAttachToNextToken.isEmpty else { return syntaxNode }
     defer { triviaToAttachToNextToken = Trivia() }
-    return syntaxNode.with(\.leadingTrivia, triviaToAttachToNextToken + syntaxNode.leadingTrivia)
+    return syntaxNode.with(\.leadingTrivia, triviaToAttachToNextToken.merging(syntaxNode.leadingTrivia))
   }
 }

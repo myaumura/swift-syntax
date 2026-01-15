@@ -54,9 +54,9 @@ public struct ConvertStoredPropertyToComputed: SyntaxRefactoringProvider {
     var modifiers = syntax.modifiers
 
     if let lazyKeyword = modifiers.first(where: { $0.name.tokenKind == .keyword(.lazy) }) {
-      modifiers = DeclModifierRemover {
-        $0.id == lazyKeyword.id
-      }.rewrite(syntax.modifiers).as(DeclModifierListSyntax.self)!
+      modifiers = DeclModifierRemover { $0.id == lazyKeyword.id }
+        .rewrite(syntax.modifiers)
+        .cast(DeclModifierListSyntax.self)
     }
 
     let newBinding =

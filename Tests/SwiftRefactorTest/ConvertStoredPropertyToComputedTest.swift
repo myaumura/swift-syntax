@@ -308,8 +308,6 @@ private func assertRefactorStructConvert(
 ) throws {
 
   let structCallDecl = try XCTUnwrap(callDecl.as(StructDeclSyntax.self))
-  let expectedDecl = try XCTUnwrap(expected.as(StructDeclSyntax.self))
-
   let variable = try XCTUnwrap(structCallDecl.memberBlock.members.first?.decl.as(VariableDeclSyntax.self))
   let refactored = try ConvertStoredPropertyToComputed.refactor(syntax: variable, in: ())
 
