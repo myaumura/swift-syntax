@@ -44,6 +44,7 @@ final class DeclModifierRemover: SyntaxRewriter {
       filteredModifiers[filteredModifiers.count - 1].trailingTrivia = filteredModifiers[filteredModifiers.count - 1]
         .trailingTrivia
         .merging(triviaToAttachToNextToken)
+      triviaToAttachToNextToken = Trivia()
     }
 
     return DeclModifierListSyntax(filteredModifiers)
