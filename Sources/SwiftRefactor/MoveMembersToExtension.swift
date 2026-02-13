@@ -12,44 +12,49 @@
 
 #if compiler(>=6)
 public import SwiftSyntax
+import SwiftParser
 #else
 import SwiftSyntax
+import SwiftParser
 #endif
 
 public struct MoveMembersToExtension: SyntaxRefactoringProvider {
 
   public struct Context {
-    public let declName: TokenSyntax
-    public let selectedIdentifiers: [SyntaxIdentifier]
+    public let range: Range<AbsolutePosition>
 
-    public init(declName: TokenSyntax, selectedIdentifiers: [SyntaxIdentifier]) {
-      self.declName = declName
-      self.selectedIdentifiers = selectedIdentifiers
+    public init(range: Range<AbsolutePosition>) {
+      self.range = range
     }
   }
 
   public static func refactor(syntax: SourceFileSyntax, in context: Context) throws -> SourceFileSyntax {
+
     guard
-      let decl = syntax.statements.first(where: {
-        $0.item.asProtocol(NamedDeclSyntax.self)?.name == context.declName
-      }),
-      let declGroup = decl.item.asProtocol(DeclGroupSyntax.self),
-      let index = syntax.statements.index(of: decl)
+      let statement = syntax.statements.first(where: { $0.item.range.contains(context.range) }),
+      let decl = statement.item.asProtocol(NamedDeclSyntax.self)
     else {
       throw RefactoringNotApplicableError("Type declaration not found")
     }
 
-    let selectedMembers = declGroup.memberBlock.members.filter { context.selectedIdentifiers.contains($0.id) }
+    guard
+      let declGroup = statement.item.asProtocol(DeclGroupSyntax.self),
+      let index = syntax.statements.index(of: statement)
+    else {
+      throw RefactoringNotApplicableError("Type declaration not found")
+    }
+
+    let selectedMembers = declGroup.memberBlock.members.filter { context.range.contains($0.range) }
 
     for member in selectedMembers {
       try validateMember(member)
     }
 
-    let remainingMembers = declGroup.memberBlock.members.filter { !context.selectedIdentifiers.contains($0.id) }
+    let remainingMembers = declGroup.memberBlock.members.filter { !context.range.contains($0.range) }
 
     let updatedMemberBlock = declGroup.memberBlock.with(\.members, remainingMembers)
     let updatedDeclGroup = declGroup.with(\.memberBlock, updatedMemberBlock)
-    let updatedItem = decl.with(\.item, .decl(DeclSyntax(updatedDeclGroup)))
+    let updatedItem = statement.with(\.item, .decl(DeclSyntax(updatedDeclGroup)))
 
     let extensionMemberBlockSyntax = declGroup.memberBlock.with(\.members, selectedMembers)
 
@@ -57,7 +62,7 @@ public struct MoveMembersToExtension: SyntaxRefactoringProvider {
       leadingTrivia: .newlines(2),
       extendedType: IdentifierTypeSyntax(
         leadingTrivia: .space,
-        name: context.declName
+        name: decl.name
       ),
       memberBlock: extensionMemberBlockSyntax
     )
@@ -65,8 +70,10 @@ public struct MoveMembersToExtension: SyntaxRefactoringProvider {
     var updatedStatements = syntax.statements
     updatedStatements.remove(at: index)
     updatedStatements.insert(updatedItem, at: index)
-    updatedStatements.append(CodeBlockItemSyntax(item: .decl(DeclSyntax(extensionDecl))))
-
+    updatedStatements.insert(
+      CodeBlockItemSyntax(item: .decl(DeclSyntax(extensionDecl))),
+      at: syntax.statements.index(after: index)
+    )
     return syntax.with(\.statements, updatedStatements)
   }
 
