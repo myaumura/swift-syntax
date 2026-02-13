@@ -12,10 +12,8 @@
 
 #if compiler(>=6)
 public import SwiftSyntax
-import SwiftParser
 #else
 import SwiftSyntax
-import SwiftParser
 #endif
 
 public struct MoveMembersToExtension: SyntaxRefactoringProvider {
@@ -32,12 +30,7 @@ public struct MoveMembersToExtension: SyntaxRefactoringProvider {
 
     guard
       let statement = syntax.statements.first(where: { $0.item.range.contains(context.range) }),
-      let decl = statement.item.asProtocol(NamedDeclSyntax.self)
-    else {
-      throw RefactoringNotApplicableError("Type declaration not found")
-    }
-
-    guard
+      let decl = statement.item.asProtocol(NamedDeclSyntax.self),
       let declGroup = statement.item.asProtocol(DeclGroupSyntax.self),
       let index = syntax.statements.index(of: statement)
     else {
