@@ -39,6 +39,10 @@ public struct MoveMembersToExtension: SyntaxRefactoringProvider {
 
     let selectedMembers = declGroup.memberBlock.members.filter { context.range.contains($0.range) }
 
+    guard !selectedMembers.isEmpty else {
+      throw RefactoringNotApplicableError("No members to move")
+    }
+
     for member in selectedMembers {
       try validateMember(member)
     }
@@ -51,11 +55,18 @@ public struct MoveMembersToExtension: SyntaxRefactoringProvider {
 
     let extensionMemberBlockSyntax = declGroup.memberBlock.with(\.members, selectedMembers)
 
+    var declName = decl.name
+
+    // e.g, after `Outer<T>` trailing trivia is empty
+    if declName.trailingTrivia.isEmpty {
+      declName = declName.with(\.trailingTrivia, .space)
+    }
+
     let extensionDecl = ExtensionDeclSyntax(
       leadingTrivia: .newlines(2),
       extendedType: IdentifierTypeSyntax(
         leadingTrivia: .space,
-        name: decl.name
+        name: declName
       ),
       memberBlock: extensionMemberBlockSyntax
     )
@@ -71,6 +82,7 @@ public struct MoveMembersToExtension: SyntaxRefactoringProvider {
   }
 
   private static func validateMember(_ member: MemberBlockItemSyntax) throws {
+
     if member.decl.is(AccessorDeclSyntax.self) || member.decl.is(DeinitializerDeclSyntax.self)
       || member.decl.is(EnumCaseDeclSyntax.self)
     {
@@ -78,7 +90,7 @@ public struct MoveMembersToExtension: SyntaxRefactoringProvider {
     }
 
     if let varDecl = member.decl.as(VariableDeclSyntax.self),
-      varDecl.bindings.contains(where: { $0.initializer == nil })
+      varDecl.bindings.contains(where: { $0.accessorBlock == nil || $0.initializer != nil })
     {
       throw RefactoringNotApplicableError("Cannot move stored properties to extension")
     }

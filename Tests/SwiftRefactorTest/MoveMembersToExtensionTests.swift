@@ -18,7 +18,7 @@ import XCTest
 import _SwiftSyntaxTestSupport
 
 final class MoveMembersToExtensionTests: XCTestCase {
-  func testMoveFunctionToExtension() throws {
+  func testMoveFunctionFromClass() throws {
     let baseline: SourceFileSyntax = """
       class Foo {
         func foo() {
@@ -52,7 +52,7 @@ final class MoveMembersToExtensionTests: XCTestCase {
     try assertRefactorConvert(baseline, expected: expected, context: context)
   }
 
-  func testMoveFunctionToExtension2() throws {
+  func testMoveFunctionFromClass2() throws {
     let baseline: SourceFileSyntax = """
       class Foo {
         func foo() {
@@ -94,7 +94,7 @@ final class MoveMembersToExtensionTests: XCTestCase {
     try assertRefactorConvert(baseline, expected: expected, context: context)
   }
 
-  func testNested() throws {
+  func testMoveNestedFromStruct() throws {
     let baseline: SourceFileSyntax = """
       struct Outer {
         struct Inner {
@@ -116,6 +116,74 @@ final class MoveMembersToExtensionTests: XCTestCase {
 
     let context = MoveMembersToExtension.Context(
       range: AbsolutePosition(utf8Offset: 14)..<AbsolutePosition(utf8Offset: 58)
+    )
+    try assertRefactorConvert(baseline, expected: expected, context: context)
+  }
+
+  func testMoveNestedFromStruct2() throws {
+    let baseline: SourceFileSyntax = """
+      struct Outer<T> {
+        struct Inner {
+          func moveThis() {}
+        }
+      }
+      """
+
+    let expected: SourceFileSyntax = """
+      struct Outer<T> {
+      }
+
+      extension Outer {
+        struct Inner {
+          func moveThis() {}
+        }
+      }
+      """
+
+    let context = MoveMembersToExtension.Context(
+      range: AbsolutePosition(utf8Offset: 17)..<AbsolutePosition(utf8Offset: 61)
+    )
+    try assertRefactorConvert(baseline, expected: expected, context: context)
+  }
+
+  func testMoveMembersFromEnum() throws {
+    let baseline: SourceFileSyntax = """
+      enum Foo {
+        func foo() {
+          print("Hello world!")
+        }
+
+        func bar() {
+          print("Hello world!")
+        }
+      }
+
+      struct Bar {
+        func foo() {}
+      }
+      """
+
+    let expected: SourceFileSyntax = """
+      enum Foo {
+
+        func bar() {
+          print("Hello world!")
+        }
+      }
+
+      extension Foo {
+        func foo() {
+          print("Hello world!")
+        }
+      }
+
+      struct Bar {
+        func foo() {}
+      }
+      """
+
+    let context = MoveMembersToExtension.Context(
+      range: AbsolutePosition(utf8Offset: 10)..<AbsolutePosition(utf8Offset: 55)
     )
     try assertRefactorConvert(baseline, expected: expected, context: context)
   }
