@@ -17,8 +17,8 @@ internal import SwiftDiagnostics
 internal import SwiftOperators
 @_spi(ExperimentalLanguageFeatures) internal import SwiftParser
 internal import SwiftSyntax
-@_spi(MacroExpansion) @_spi(ExperimentalLanguageFeature) internal import SwiftSyntaxMacroExpansion
-@_spi(ExperimentalLanguageFeature) internal import SwiftSyntaxMacros
+@_spi(MacroExpansion) @_spi(ExperimentalLanguageFeatures) internal import SwiftSyntaxMacroExpansion
+@_spi(ExperimentalLanguageFeatures) internal import SwiftSyntaxMacros
 #else
 import SwiftBasicFormat
 import SwiftDiagnostics
@@ -26,8 +26,8 @@ import SwiftDiagnostics
 import SwiftOperators
 @_spi(ExperimentalLanguageFeatures) import SwiftParser
 import SwiftSyntax
-@_spi(MacroExpansion) @_spi(ExperimentalLanguageFeature) import SwiftSyntaxMacroExpansion
-@_spi(ExperimentalLanguageFeature) import SwiftSyntaxMacros
+@_spi(MacroExpansion) @_spi(ExperimentalLanguageFeatures) import SwiftSyntaxMacroExpansion
+@_spi(ExperimentalLanguageFeatures) import SwiftSyntaxMacros
 #endif
 
 extension PluginProviderMessageHandler {

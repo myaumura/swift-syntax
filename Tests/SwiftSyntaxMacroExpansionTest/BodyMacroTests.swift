@@ -21,7 +21,7 @@
 import SwiftDiagnostics
 import SwiftSyntax
 @_spi(Testing) import SwiftSyntaxMacroExpansion
-@_spi(ExperimentalLanguageFeature) import SwiftSyntaxMacros
+@_spi(ExperimentalLanguageFeatures) import SwiftSyntaxMacros
 import SwiftSyntaxMacrosTestSupport
 import XCTest
 

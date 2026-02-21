@@ -13,11 +13,11 @@
 #if compiler(>=6)
 import SwiftBasicFormat
 public import SwiftSyntax
-@_spi(MacroExpansion) @_spi(ExperimentalLanguageFeature) public import SwiftSyntaxMacros
+@_spi(MacroExpansion) @_spi(ExperimentalLanguageFeatures) public import SwiftSyntaxMacros
 #else
 import SwiftBasicFormat
 import SwiftSyntax
-@_spi(MacroExpansion) @_spi(ExperimentalLanguageFeature) import SwiftSyntaxMacros
+@_spi(MacroExpansion) @_spi(ExperimentalLanguageFeatures) import SwiftSyntaxMacros
 #endif
 
 public enum MacroRole: Sendable {
@@ -30,8 +30,8 @@ public enum MacroRole: Sendable {
   case conformance
   case codeItem
   case `extension`
-  @_spi(ExperimentalLanguageFeature) case preamble
-  @_spi(ExperimentalLanguageFeature) case body
+  @_spi(ExperimentalLanguageFeatures) case preamble
+  case body
 }
 
 extension MacroRole {

@@ -12,7 +12,7 @@
 
 #if compiler(>=6)
 public import SwiftSyntax
-public import SwiftBasicFormat
+import SwiftBasicFormat
 #else
 import SwiftSyntax
 import SwiftBasicFormat
