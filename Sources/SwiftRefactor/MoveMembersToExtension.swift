@@ -17,7 +17,6 @@ import SwiftSyntax
 #endif
 
 public struct MoveMembersToExtension: SyntaxRefactoringProvider {
-
   public struct Context {
     public let range: Range<AbsolutePosition>
 
@@ -27,40 +26,43 @@ public struct MoveMembersToExtension: SyntaxRefactoringProvider {
   }
 
   public static func refactor(syntax: SourceFileSyntax, in context: Context) throws -> SourceFileSyntax {
-
     guard
       let statement = syntax.statements.first(where: { $0.item.range.contains(context.range) }),
       let decl = statement.item.asProtocol(NamedDeclSyntax.self),
       let declGroup = statement.item.asProtocol(DeclGroupSyntax.self),
-      let index = syntax.statements.index(of: statement)
+      let statementIndex = syntax.statements.index(of: statement)
     else {
       throw RefactoringNotApplicableError("Type declaration not found")
     }
 
-    let selectedMembers = declGroup.memberBlock.members.filter { context.range.contains($0.range) }
+    var selectedMembers = [MemberBlockItemSyntax]()
+    var selectedIdentifiers = [SyntaxIdentifier]()
+
+    var notMovedMembers: [MemberBlockItemSyntax] = []
+
+    declGroup.memberBlock.members.forEach {
+      if context.range.overlaps($0.trimmedRange) {
+        if validateMember($0) {
+          selectedMembers.append($0)
+          selectedIdentifiers.append($0.id)
+        } else {
+          notMovedMembers.append($0)
+        }
+      }
+    }
 
     guard !selectedMembers.isEmpty else {
       throw RefactoringNotApplicableError("No members to move")
     }
 
-    for member in selectedMembers {
-      try validateMember(member)
-    }
-
-    let remainingMembers = declGroup.memberBlock.members.filter { !context.range.contains($0.range) }
-
-    let updatedMemberBlock = declGroup.memberBlock.with(\.members, remainingMembers)
-    let updatedDeclGroup = declGroup.with(\.memberBlock, updatedMemberBlock)
+    var updatedDeclGroup = declGroup
+    updatedDeclGroup.memberBlock.members = declGroup.memberBlock.members.filter { !selectedIdentifiers.contains($0.id) }
     let updatedItem = statement.with(\.item, .decl(DeclSyntax(updatedDeclGroup)))
 
-    let extensionMemberBlockSyntax = declGroup.memberBlock.with(\.members, selectedMembers)
+    let extensionMemberBlockSyntax = declGroup.memberBlock.with(\.members, MemberBlockItemListSyntax(selectedMembers))
 
     var declName = decl.name
-
-    // e.g, after `Outer<T>` trailing trivia is empty
-    if declName.trailingTrivia.isEmpty {
-      declName = declName.with(\.trailingTrivia, .space)
-    }
+    declName.trailingTrivia = declName.trailingTrivia.merging(.space)
 
     let extensionDecl = ExtensionDeclSyntax(
       leadingTrivia: .newlines(2),
@@ -71,28 +73,29 @@ public struct MoveMembersToExtension: SyntaxRefactoringProvider {
       memberBlock: extensionMemberBlockSyntax
     )
 
-    var updatedStatements = syntax.statements
-    updatedStatements.remove(at: index)
-    updatedStatements.insert(updatedItem, at: index)
-    updatedStatements.insert(
+    var syntax = syntax
+    syntax.statements[statementIndex] = updatedItem
+    syntax.statements.insert(
       CodeBlockItemSyntax(item: .decl(DeclSyntax(extensionDecl))),
-      at: syntax.statements.index(after: index)
+      at: syntax.statements.index(after: statementIndex)
     )
-    return syntax.with(\.statements, updatedStatements)
+    return syntax
   }
 
-  private static func validateMember(_ member: MemberBlockItemSyntax) throws {
+  private static func validateMember(_ member: MemberBlockItemSyntax) -> Bool {
 
     if member.decl.is(AccessorDeclSyntax.self) || member.decl.is(DeinitializerDeclSyntax.self)
       || member.decl.is(EnumCaseDeclSyntax.self)
     {
-      throw RefactoringNotApplicableError("Cannot move this type of declaration")
+      return false
     }
 
     if let varDecl = member.decl.as(VariableDeclSyntax.self),
       varDecl.bindings.contains(where: { $0.accessorBlock == nil || $0.initializer != nil })
     {
-      throw RefactoringNotApplicableError("Cannot move stored properties to extension")
+      return false
     }
+
+    return true
   }
 }

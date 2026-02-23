@@ -19,45 +19,42 @@ import _SwiftSyntaxTestSupport
 
 final class MoveMembersToExtensionTests: XCTestCase {
   func testMoveFunctionFromClass() throws {
-    let baseline: SourceFileSyntax = """
-      class Foo {
+    try assertMoveMembersToExtension(
+      """
+      class Foo {1️⃣
         func foo() {
           print("Hello world!")
-        }
+        }2️⃣
 
         func bar() {
           print("Hello world!")
         }
       }
-      """
+      """,
+      expected: """
+        class Foo {
 
-    let expected: SourceFileSyntax = """
-      class Foo {
-
-        func bar() {
-          print("Hello world!")
+          func bar() {
+            print("Hello world!")
+          }
         }
-      }
 
-      extension Foo {
-        func foo() {
-          print("Hello world!")
+        extension Foo {
+          func foo() {
+            print("Hello world!")
+          }
         }
-      }
-      """
-
-    let context = MoveMembersToExtension.Context(
-      range: AbsolutePosition(utf8Offset: 11)..<AbsolutePosition(utf8Offset: 56)
+        """
     )
-    try assertRefactorConvert(baseline, expected: expected, context: context)
   }
 
   func testMoveFunctionFromClass2() throws {
-    let baseline: SourceFileSyntax = """
-      class Foo {
+    try assertMoveMembersToExtension(
+      """
+      class Foo {1️⃣
         func foo() {
           print("Hello world!")
-        }
+        }2️⃣
 
         func bar() {
           print("Hello world!")
@@ -67,91 +64,199 @@ final class MoveMembersToExtensionTests: XCTestCase {
       struct Bar {
         func foo() {}
       }
-      """
+      """,
+      expected: """
+        class Foo {
 
-    let expected: SourceFileSyntax = """
-      class Foo {
-
-        func bar() {
-          print("Hello world!")
+          func bar() {
+            print("Hello world!")
+          }
         }
-      }
 
-      extension Foo {
-        func foo() {
-          print("Hello world!")
+        extension Foo {
+          func foo() {
+            print("Hello world!")
+          }
         }
-      }
 
-      struct Bar {
-        func foo() {}
-      }
-      """
-
-    let context = MoveMembersToExtension.Context(
-      range: AbsolutePosition(utf8Offset: 11)..<AbsolutePosition(utf8Offset: 56)
+        struct Bar {
+          func foo() {}
+        }
+        """
     )
-    try assertRefactorConvert(baseline, expected: expected, context: context)
+  }
+
+  func testMoveFunctionFromClassWithComment() throws {
+    try assertMoveMembersToExtension(
+      """
+      class Foo {
+        // Func foo prints "Hello world!"1️⃣
+        func foo() {
+          print("Hello world!")
+        }2️⃣
+
+        func bar() {
+          print("Hello world!")
+        }
+      }
+
+      struct Bar {
+        func foo() {}
+      }
+      """,
+      expected: """
+        class Foo {
+
+          func bar() {
+            print("Hello world!")
+          }
+        }
+
+        extension Foo {
+          // Func foo prints "Hello world!"
+          func foo() {
+            print("Hello world!")
+          }
+        }
+
+        struct Bar {
+          func foo() {}
+        }
+        """
+    )
+  }
+
+  func testMoveParticiallySelectedFunctionFromClass() throws {
+    try assertMoveMembersToExtension(
+      """
+      class Foo {
+        func foo() {
+          1️⃣print("Hello world!")
+        }2️⃣
+
+        func bar() {
+          print("Hello world!")
+        }
+      }
+
+      struct Bar {
+        func foo() {}
+      }
+      """,
+      expected: """
+        class Foo {
+
+          func bar() {
+            print("Hello world!")
+          }
+        }
+
+        extension Foo {
+          func foo() {
+            print("Hello world!")
+          }
+        }
+
+        struct Bar {
+          func foo() {}
+        }
+        """
+    )
+  }
+
+  func testMoveSelectedFromClass() throws {
+    try assertMoveMembersToExtension(
+      """
+      class Foo {1️⃣
+        func foo() {
+          print("Hello world!")
+        }
+
+        deinit() {}
+
+        func bar() {
+          print("Hello world!")
+        }2️⃣
+      }
+
+      struct Bar {
+        func foo() {}
+      }
+      """,
+      expected: """
+        class Foo {
+
+          deinit() {}
+        }
+
+        extension Foo {
+          func foo() {
+            print("Hello world!")
+          }
+
+          func bar() {
+            print("Hello world!")
+          }
+        }
+
+        struct Bar {
+          func foo() {}
+        }
+        """
+    )
   }
 
   func testMoveNestedFromStruct() throws {
-    let baseline: SourceFileSyntax = """
-      struct Outer {
+    try assertMoveMembersToExtension(
+      """
+      struct Outer {1️⃣
         struct Inner {
           func moveThis() {}
+        }2️⃣
+      }
+      """,
+      expected: """
+        struct Outer {
         }
-      }
-      """
 
-    let expected: SourceFileSyntax = """
-      struct Outer {
-      }
-
-      extension Outer {
-        struct Inner {
-          func moveThis() {}
+        extension Outer {
+          struct Inner {
+            func moveThis() {}
+          }
         }
-      }
-      """
-
-    let context = MoveMembersToExtension.Context(
-      range: AbsolutePosition(utf8Offset: 14)..<AbsolutePosition(utf8Offset: 58)
+        """
     )
-    try assertRefactorConvert(baseline, expected: expected, context: context)
   }
 
   func testMoveNestedFromStruct2() throws {
-    let baseline: SourceFileSyntax = """
-      struct Outer<T> {
+    try assertMoveMembersToExtension(
+      """
+      struct Outer<T> {1️⃣
         struct Inner {
           func moveThis() {}
+        }2️⃣
+      }
+      """,
+      expected: """
+        struct Outer<T> {
         }
-      }
-      """
 
-    let expected: SourceFileSyntax = """
-      struct Outer<T> {
-      }
-
-      extension Outer {
-        struct Inner {
-          func moveThis() {}
+        extension Outer {
+          struct Inner {
+            func moveThis() {}
+          }
         }
-      }
-      """
-
-    let context = MoveMembersToExtension.Context(
-      range: AbsolutePosition(utf8Offset: 17)..<AbsolutePosition(utf8Offset: 61)
+        """
     )
-    try assertRefactorConvert(baseline, expected: expected, context: context)
   }
 
   func testMoveMembersFromEnum() throws {
-    let baseline: SourceFileSyntax = """
-      enum Foo {
+    try assertMoveMembersToExtension(
+      """
+      enum Foo {1️⃣
         func foo() {
           print("Hello world!")
-        }
+        }2️⃣
 
         func bar() {
           print("Hello world!")
@@ -161,43 +266,45 @@ final class MoveMembersToExtensionTests: XCTestCase {
       struct Bar {
         func foo() {}
       }
-      """
+      """,
+      expected: """
+        enum Foo {
 
-    let expected: SourceFileSyntax = """
-      enum Foo {
-
-        func bar() {
-          print("Hello world!")
+          func bar() {
+            print("Hello world!")
+          }
         }
-      }
 
-      extension Foo {
-        func foo() {
-          print("Hello world!")
+        extension Foo {
+          func foo() {
+            print("Hello world!")
+          }
         }
-      }
 
-      struct Bar {
-        func foo() {}
-      }
-      """
-
-    let context = MoveMembersToExtension.Context(
-      range: AbsolutePosition(utf8Offset: 10)..<AbsolutePosition(utf8Offset: 55)
+        struct Bar {
+          func foo() {}
+        }
+        """
     )
-    try assertRefactorConvert(baseline, expected: expected, context: context)
   }
 }
 
-private func assertRefactorConvert(
-  _ callDecl: SourceFileSyntax,
-  expected: SourceFileSyntax?,
-  context: MoveMembersToExtension.Context,
+private func assertMoveMembersToExtension(
+  _ callDecl: String,
+  expected: SourceFileSyntax,
   file: StaticString = #filePath,
   line: UInt = #line
 ) throws {
+
+  let (markers, source) = extractMarkers(callDecl.description)
+  let positions = markers.mapValues { AbsolutePosition(utf8Offset: $0) }
+  var parser = Parser(source)
+  let tree = SourceFileSyntax.parse(from: &parser)
+
+  let context = MoveMembersToExtension.Context(range: positions["1️⃣"]!..<positions["2️⃣"]!)
+
   try assertRefactor(
-    callDecl,
+    tree,
     context: context,
     provider: MoveMembersToExtension.self,
     expected: expected,
